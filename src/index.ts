@@ -1,4 +1,5 @@
 import cron from 'node-cron';
+import format from 'pg-format';
 import axios from 'axios';
 import { Pool } from 'pg';
 
@@ -17,25 +18,24 @@ async function wsfQuery() {
   };
 
   axios(config)
-    .then((response: { data: any; }) => {
-      (response.data.map((rawAlert: any) => {
-        saveAlert(rawAlert);
-      }
-      ));
+    .then((response: { data: any[]; }) => {
+      saveAlert(response.data);
     })
     .catch((error: any) => {
       console.log(error);
     });
 }
 
-async function saveAlert(alert: any) {
-  const text = 'INSERT INTO wsfalerts(bulletinid, alert) VALUES($1, $2) ON CONFLICT (bulletinid) DO NOTHING RETURNING *'
-  const values: [number, any] = [alert.BulletinID, alert]
+async function saveAlert(rawAlerts: any[]) {
+  // const text = 'INSERT INTO wsfalerts(bulletinid, alert) VALUES($1, $2) ON CONFLICT (bulletinid) DO NOTHING RETURNING *'
+  // const values: [number, any] = [alert.BulletinID, alert]
+  const alerts = rawAlerts.map(rawAlert => [rawAlert.BulletinID, rawAlert]);
+  const sql = format(`INSERT INTO wsfalerts(bulletinid, alert) VALUES %L ON CONFLICT (bulletinid) DO NOTHING RETURNING *`, alerts);
 
   pool
-    .query(text, values)
+    .query(sql)
     .then(res => {
-      console.log(res.rows[0])
+      console.log(res.rowCount ? `added new alert(s): ${res.rows.map(row => row.bulletinid + ' ')}` : 'no new alerts');
     })
     .catch(err => {
       setImmediate(() => {
@@ -45,6 +45,6 @@ async function saveAlert(alert: any) {
 }
 
 cron.schedule(`0 * * * *`, async () => {
-  console.log(`running wsf alert query ${new Date().toTimeString()}`);
+  console.log(`running wsf alert query at ${new Date().toString()}`);
   wsfQuery();
 });
