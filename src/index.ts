@@ -45,6 +45,6 @@ async function saveAlert(rawAlerts: any[]) {
 }
 
 cron.schedule(`0 * * * *`, async () => {
-  console.log(`running wsf alert query at ${new Date().toString()}`);
+  console.log(`running wsf alert query at ${new Date().toLocaleString('en-US', { timeZone: 'PST' })}`);
   wsfQuery();
 });
