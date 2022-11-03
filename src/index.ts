@@ -27,15 +27,13 @@ async function wsfQuery() {
 }
 
 async function saveAlert(rawAlerts: any[]) {
-  // const text = 'INSERT INTO wsfalerts(bulletinid, alert) VALUES($1, $2) ON CONFLICT (bulletinid) DO NOTHING RETURNING *'
-  // const values: [number, any] = [alert.BulletinID, alert]
   const alerts = rawAlerts.map(rawAlert => [rawAlert.BulletinID, rawAlert]);
   const sql = format(`INSERT INTO wsfalerts(bulletinid, alert) VALUES %L ON CONFLICT (bulletinid) DO NOTHING RETURNING *`, alerts);
 
   pool
     .query(sql)
     .then(res => {
-      console.log(res.rowCount ? `added new alert(s): ${res.rows.map(row => row.bulletinid + ' ')}` : 'no new alerts');
+      console.log(res.rowCount ? `added new alert(s): ${res.rows.map(row => ' ' + row.bulletinid)}` : 'no new alerts');
     })
     .catch(err => {
       setImmediate(() => {
@@ -44,7 +42,8 @@ async function saveAlert(rawAlerts: any[]) {
     })
 }
 
-cron.schedule(`0 * * * *`, async () => {
+// Poll WSF every 30m for new alerts
+cron.schedule(`*/30 * * * *`, async () => {
   console.log(`running wsf alert query at ${new Date().toLocaleString('en-US', { timeZone: 'PST' })}`);
   wsfQuery();
 });
