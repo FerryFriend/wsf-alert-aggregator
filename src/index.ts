@@ -42,8 +42,8 @@ async function saveAlert(rawAlerts: any[]) {
     })
 }
 
-// Poll WSF every 30m for new alerts
-cron.schedule(`*/30 * * * *`, async () => {
+// Poll WSF every 10m for new alerts
+cron.schedule(`*/10 * * * *`, async () => {
   console.log(`running wsf alert query at ${new Date().toLocaleString('en-US', { timeZone: 'PST' })}`);
   wsfQuery();
 });
